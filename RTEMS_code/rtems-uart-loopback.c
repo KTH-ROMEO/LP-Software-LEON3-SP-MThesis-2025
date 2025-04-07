@@ -100,22 +100,7 @@ rtems_task Init( rtems_task_argument argument);	/* forward declaration needed */
 #include <unistd.h>
 #include <errno.h>
 
-/* Setup loop back UART connections.
- *
- * Tells test application UART[N]_TX is connected to UART[TAB[N]]_RX.
- * UART0 is the first uart. Set to -1 to skip UART
- */
-int loop_back_uarts['z'-'a'] =
-{
-#warning CONFIGURE LOOPBACK TABLE TO MATCH YOUR HARDWARE
-	-1,	/* UART0: System Console: not in loop back */
-	2,	/* UART1: connected to UART2 */
-	1,	/* UART2: connected to UART1 */
-	4,	/* UART3: connected to UART4 */
-	3,	/* UART4: connected to UART3 */
-	-1,	/* UART5: not in loop back */
-	0	/* unused UARTs ... */
-};
+
 
 rtems_task Init(
   rtems_task_argument ignored
@@ -129,44 +114,12 @@ rtems_task Init(
 	int iterations, console_nr, loop_back_uart;
 
 	iprintf("\nHello World on System Console\n");
-    iprintf("Result %d\r\n", RTEMS_DRVMGR_STARTUP);
-	fflush(NULL);
-	iprintf("\nHello World on Debug Console\n");
+	iprintf("RTEMS_DRVMGR_STARTUP %d\n", RTEMS_DRVMGR_STARTUP);
+
 #ifndef RTEMS_DRVMGR_STARTUP
 	iprintf("RTEMS System configured to support max %d UARTs\n\n\n",CONFIGURE_NUMBER_OF_TERMIOS_PORTS);
 #endif
 
-    iprintf("GOT HERE\r\n");
-
-	/* Open and setup consoles */
-	// n_consoles = 1; /* assume system console */
-	// for(console='b'; console<'z'; console++) {
-	// 	sprintf(buf, "/dev/console_%c", console);
-	// 	fd = fds[console-'a'] = open(buf, O_RDWR);
-	// 	if ( fd < 0 ) {
-	// 		iprintf("Failed to open %s.\nNumber of consoles available: %d\nCause open failed, ERRNO: %d = %s\n\n\n",buf,(console-'b')+1,errno,strerror(errno));
-	// 		break;
-	// 	}
-    //     iprintf("GOT HERE %c: ", console);
-
-	// 	/* Get current configuration */
-	// 	tcgetattr(fd, &term);
-
-	// 	/* Set Console baud to 38400, default is 38400 */
-	// 	cfsetospeed(&term, B38400);
-	// 	cfsetispeed(&term, B38400);
-
-	// 	/* Do not echo chars */
-	// 	term.c_lflag &= ~(ICANON|ECHO|ECHOE|ECHOK|ECHONL|ECHOPRT|ECHOCTL|ECHOKE);
-
-	// 	/* Turn off flow control */
-	// 	term.c_cflag |= CLOCAL;
-
-	// 	/* Update driver's settings */
-	// 	tcsetattr(fd, TCSANOW, &term);
-
-	// 	n_consoles++;
-	// }
     fd = open("/dev/console", O_RDWR);
 
     // 	/* Get current configuration */
@@ -185,89 +138,21 @@ rtems_task Init(
     /* Update driver's settings */
     tcsetattr(fd, TCSANOW, &term);
 
-
-	fflush(NULL);
-
-    iprintf("GOT HERE\r\n");
-
     buf[0] = 'H';
     buf[1] = 'i';
     buf[2] = '!';
     buf[3] = '\r';
     buf[4] = '\n';
 
-    for(int i = 0; i< 5;i ++)
-    {
-        if ( write(fd, &buf[i], 1) != 1 ) {
-            iprintf("Failed to send character\n");
-            exit(0);
-        }
-    }
-    
-
-
-    // if ( write(fd, &buf[0], 1) != 1 ) {
-    //     iprintf("Failed to send character\n");
-    //     exit(0);
+	write(fd, buf, 5);
+	write(fd, buf, 5);
+    // for(int i = 0; i< 5;i ++)
+    // {
+    //     if ( write(fd, &buf[i], 1) != 1 ) {
+    //         iprintf("Failed to send character\n");
+    //         exit(0);
+    //     }
     // }
-
-
-
-	/* Send a string of every UART and compare it with the received
-	 * string
-	 */
-    
-	// for(console_nr=0; console_nr<n_consoles; console_nr++) {
-	// 	fdTx = fds[console_nr];
-		
-	// 	loop_back_uart = loop_back_uarts[console_nr];
-	// 	if ( loop_back_uart < 0 ) {
-	// 		/* Not in use, skip in test */
-	// 		printf("Skipping /dev/console_%c\n",console_nr+'a');
-	// 		continue;
-	// 	}
-
-	// 	iprintf("/dev/console_%c TX connected to /dev/console_%c RX\n", 'a'+console_nr, 'a'+loop_back_uart);
-
-	// 	/* Get Receiving UART's file descriptor */
-	// 	fdRx = fds[loop_back_uart];
-
-	// 	/* Prepare unique string to send */
-	// 	len = sprintf(buf, "Hello World on /dev/console_%c\n\n", 'a'+console_nr);
-
-	// 	/* Send the string */
-	// 	for(i=0; i<len; i++) {
-
-	// 		/* Send 1 char */
-	// 		if ( write(fdTx, &buf[i], 1) != 1 ) {
-	// 			printf("Failed to send character\n");
-	// 			exit(0);
-	// 		}
-
-	// 		/* Force send */
-	// 		fflush(NULL);
-			
-	// 		/* Read 1 char with timeout of 10 system ticks */
-	// 		iterations = 0;
-	// 		while(read(fdRx, &bufRx[i], 1) < 1) {
-	// 			/* Wait until sent char has been received */
-	// 			rtems_task_wake_after(1);
-	// 			iterations++;
-	// 			if ( iterations > 9 ) {
-	// 				printf("Did not get char even after 10 ticks (UART%d -> UART%d)\n",console_nr,loop_back_uart);
-	// 				exit(0);
-	// 			}
-	// 		}
-
-	// 		/* Compare sent char with received char */
-	// 		if ( bufRx[i] != buf[i] ) {
-	// 			printf("Unexpected char, got 0x%x expected 0x%x\n",(unsigned int)bufRx[i],(unsigned int)buf[i]);
-	// 			exit(0);
-	// 		}
-	// 	}
-	// 	printf("Partial Test OK.\n");
-	// 	fflush(NULL);
-	// }
 
 	/* Tell everything is done. */
 	printf("Complete Test OK.\n");

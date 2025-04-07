@@ -1,0 +1,4 @@
+ 
+ wget https://launchpad.net/ubuntu/+archive/primary/+files/libncursesw5_6.2-0ubuntu2_amd64.deb
+  sudo dpkg -i libncursesw5_6.2-0ubuntu2_amd64.deb
+  ls -l /lib/x86_64-linux-gnu/libncursesw.so.5*
