@@ -1,0 +1,1 @@
+#define SPP_MAX_PACKET_LEN              256
