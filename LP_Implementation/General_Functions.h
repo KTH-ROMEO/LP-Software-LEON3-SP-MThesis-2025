@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "Space_Packet_Protocol.h"
+#include "PUS.h"
 
 typedef struct {
 	uint8_t PUS_HEADER_PRESENT;
@@ -14,3 +15,11 @@ typedef struct {
 
 
 void uart_print(int fd_UART, const char *msg);
+void Prepare_full_msg(SPP_header_t* resp_SPP_header,
+						PUS_TM_header_t* resp_PUS_header,
+						uint8_t* data,
+						uint16_t data_len,
+						uint8_t* OUT_full_msg,
+						uint16_t* OUT_full_msg_len );
+void Add_SPP_PUS_and_send_TM(UART_OUT_OBC_msg* UART_OUT_msg_received);
+
