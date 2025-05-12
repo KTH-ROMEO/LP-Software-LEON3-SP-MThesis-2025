@@ -93,25 +93,6 @@ rtems_task handle_UART_OUT_OBC_Task(rtems_task_argument argument)
 	}
 }
 
-
-
-rtems_task Task_2(rtems_task_argument argument)
-{
-    // rtems_status_code status;
-    char start_buffer[17] = "Started Task 2\r\n";
-    write(fd_UART_1, start_buffer, 17);
-
-    char buffer[25] = "Task 2 running ...\r\n";
-    for(;;)
-    {
-        write(fd_UART_1, buffer, 25);
-        rtems_task_wake_after(100);
-    }
-
-}
-
-
-
 /* The Init task creates and starts the two UART tasks */
 rtems_task Init(rtems_task_argument argument)
 {
@@ -136,7 +117,7 @@ rtems_task Init(rtems_task_argument argument)
     status = rtems_task_create(
         rtems_build_name('P','R','T','1'),
         2,                         /* priority */
-        RTEMS_MINIMUM_STACK_SIZE,
+        10*RTEMS_MINIMUM_STACK_SIZE,
         RTEMS_DEFAULT_MODES,
         RTEMS_DEFAULT_ATTRIBUTES,
         &PUS_3
@@ -148,7 +129,7 @@ rtems_task Init(rtems_task_argument argument)
     status = rtems_task_create(
         rtems_build_name('U','A','R','T'),
         1,                         /* priority */
-        RTEMS_MINIMUM_STACK_SIZE,
+        10*RTEMS_MINIMUM_STACK_SIZE,
         RTEMS_DEFAULT_MODES,
         RTEMS_DEFAULT_ATTRIBUTES,
         &handle_UART_OUT_OBC
@@ -159,7 +140,7 @@ rtems_task Init(rtems_task_argument argument)
 
     status = rtems_message_queue_create(
         rtems_build_name('Q', 'U', 'E', 'E'),  // unique 4-character name
-        5,                         // number of messages (queue length)
+        10,                         // number of messages (queue length)
         sizeof(UART_OUT_OBC_msg),                         // size of each message in bytes
         RTEMS_DEFAULT_ATTRIBUTES,            // default attributes (FIFO)
         &queue_id                             // pointer to receive queue ID

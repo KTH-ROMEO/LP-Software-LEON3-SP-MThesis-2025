@@ -48,12 +48,18 @@ static void fill_report_struct(uint16_t SID) {
     switch(SID) {
         case UC_SID:
             for(int i = 0; i < HKPRS_uc.N1; i++) {
-            	HKPRS_uc.parameters[i] = uc_pars[i];
+            	HKPRS_uc.parameters[i] = ((uc_pars[i] & 0xFF000000) >> 24) |  // Move byte 3 to byte 0
+                                        ((uc_pars[i] & 0x00FF0000) >> 8)  |  // Move byte 2 to byte 1
+                                        ((uc_pars[i] & 0x0000FF00) << 8)  |  // Move byte 1 to byte 2
+                                        ((uc_pars[i] & 0x000000FF) << 24);
             }
             break;
         case FPGA_SID:
             for(int i = 0; i < HKPRS_fpga.N1; i++) {
-            	HKPRS_fpga.parameters[i] = fpga_pars[i];
+            	HKPRS_fpga.parameters[i] = ((fpga_pars[i] & 0xFF000000) >> 24) |  // Move byte 3 to byte 0
+                                        ((fpga_pars[i] & 0x00FF0000) >> 8)  |  // Move byte 2 to byte 1
+                                        ((fpga_pars[i] & 0x0000FF00) << 8)  |  // Move byte 1 to byte 2
+                                        ((fpga_pars[i] & 0x000000FF) << 24);
             }
             break;
     }
