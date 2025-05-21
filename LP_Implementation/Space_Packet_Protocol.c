@@ -3,6 +3,9 @@
 #include <stdint.h>
 #include <string.h>
 
+volatile UART_Rx_OBC_Msg UART_RxBuffer;
+volatile uint16_t UART_recv_count = 0;
+
 // CRC16-CCITT
 static uint16_t SPP_CRC16_byte(uint16_t crcValue, uint8_t newByte) {
 	uint8_t i;

@@ -15,6 +15,7 @@ typedef struct {
 
 
 void uart_print(int fd_UART, const char *msg);
+void uart_print_2(int fd_UART, const char *msg, int msg_len);
 void Prepare_full_msg(SPP_header_t* resp_SPP_header,
 						PUS_TM_header_t* resp_PUS_header,
 						uint8_t* data,

@@ -1,7 +1,7 @@
 #include "PUS_3.h"
 #include "General_Functions.h"
 
-extern int fd_UART_1;
+extern int fd_UART_1, fd_UART_0;
 extern rtems_id queue_id;
 
 uint16_t vbat_i = 1;
@@ -103,21 +103,21 @@ void PUS_3_HK_send(PUS_3_msg* pus3_msg_received) {
 		uint16_t tm_data_len = encode_HK_struct(&HKPRS_uc, msg_to_send_uC.TM_data);
 		msg_to_send_uC.TM_data_len			= tm_data_len;
 
-		rtems_status_code send_status = rtems_message_queue_send(queue_id, &msg_to_send_uC, sizeof(msg_to_send_uC));
-        switch (send_status) {
-            case RTEMS_SUCCESSFUL:
-                uart_print(fd_UART_1, "Periodic uC Data sent successfully\r\n");
-                break;
-            case RTEMS_TOO_MANY:
-                uart_print(fd_UART_1, "Queue full, message not sent\r\n");
-                break;
-            case RTEMS_INVALID_ID:
-                uart_print(fd_UART_1, "Invalid queue ID\r\n");
-                break;
-            default:
-                uart_print(fd_UART_1, "Unknown send error\r\n");
-                break;
-        }
+		// rtems_status_code send_status = rtems_message_queue_send(queue_id, &msg_to_send_uC, sizeof(msg_to_send_uC));
+        // switch (send_status) {
+        //     case RTEMS_SUCCESSFUL:
+        //         uart_print(fd_UART_1, "Periodic uC Data sent successfully\r\n");
+        //         break;
+        //     case RTEMS_TOO_MANY:
+        //         uart_print(fd_UART_1, "Queue full, message not sent\r\n");
+        //         break;
+        //     case RTEMS_INVALID_ID:
+        //         uart_print(fd_UART_1, "Invalid queue ID\r\n");
+        //         break;
+        //     default:
+        //         uart_print(fd_UART_1, "Unknown send error\r\n");
+        //         break;
+        // }
 	}
 
 	if (current_FPGA_report_frequency >= 1) {
@@ -134,20 +134,21 @@ void PUS_3_HK_send(PUS_3_msg* pus3_msg_received) {
 		uint16_t tm_data_len = encode_HK_struct(&HKPRS_fpga, msg_to_send_FPGA.TM_data);
 		msg_to_send_FPGA.TM_data_len			= tm_data_len;
 
-		rtems_status_code send_status = rtems_message_queue_send(queue_id, &msg_to_send_FPGA, sizeof(msg_to_send_FPGA));
-        switch (send_status) {
-            case RTEMS_SUCCESSFUL:
-                uart_print(fd_UART_1, "Periodic FPGA Data sent successfully\r\n");
-                break;
-            case RTEMS_TOO_MANY:
-                uart_print(fd_UART_1, "Queue full, message not sent\r\n");
-                break;
-            case RTEMS_INVALID_ID:
-                uart_print(fd_UART_1, "Invalid queue ID\r\n");
-                break;
-            default:
-                uart_print(fd_UART_1, "Unknown send error\r\n");
-                break;
-        }
+		// rtems_status_code send_status = rtems_message_queue_send(queue_id, &msg_to_send_FPGA, sizeof(msg_to_send_FPGA));
+        // switch (send_status) {
+        //     case RTEMS_SUCCESSFUL:
+        //         uart_print(fd_UART_1, "Periodic FPGA Data sent successfully\r\n");
+        //         break;
+        //     case RTEMS_TOO_MANY:
+        //         uart_print(fd_UART_1, "Queue full, message not sent\r\n");
+        //         break;
+        //     case RTEMS_INVALID_ID:
+        //         uart_print(fd_UART_1, "Invalid queue ID\r\n");
+        //         break;
+        //     default:
+        //         uart_print(fd_UART_1, "Unknown send error\r\n");
+        //         break;
+        // }
 	}
+    // uart_print(fd_UART_0, "Sending Periodic data\n");
 }

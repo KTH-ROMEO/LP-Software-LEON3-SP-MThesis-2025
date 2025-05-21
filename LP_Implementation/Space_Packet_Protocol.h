@@ -2,6 +2,14 @@
 #define SPACE_PACKET_PROTOCOL_H_
 
 #include <stdint.h>
+#include "COBS.h"
+
+
+typedef struct {
+	uint8_t RxBuffer[MAX_COBS_FRAME_LEN];  	// Pointer to the data buffer
+    uint16_t frame_size; 			// Number of valid bytes in the buffer
+} UART_Rx_OBC_Msg;
+
 
 // Primary header is 6 bytes. From SPP standard.
 #define SPP_HEADER_LEN            6
