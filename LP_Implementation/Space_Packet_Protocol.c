@@ -1,5 +1,6 @@
 #include "Space_Packet_Protocol.h"
 #include "PUS.h"
+#include "PUS_1_service.h"
 #include <stdint.h>
 #include <string.h>
 
@@ -29,6 +30,41 @@ static uint16_t SPP_calc_CRC16(uint8_t* data, uint16_t length) {
     }
    
     return CRCvalue;
+}
+
+// CRC is calculated over all of the packet. The last two bytes are the received CRC.
+SPP_error SPP_validate_checksum(uint8_t* packet, uint16_t packet_length, void* PUS_1_Fail_Acc_Data_ptr) {
+    uint16_t received_CRC = 0x0000;
+    received_CRC |= (packet[packet_length - 2] << 8) | packet[packet_length - 1];
+
+    uint16_t calculated_CRC = SPP_calc_CRC16(packet, packet_length - 2);
+
+    PUS_1_Fail_Acc_Data_t* PUS_1_Fail_Acc_Data = (PUS_1_Fail_Acc_Data_t*) PUS_1_Fail_Acc_Data_ptr;
+    PUS_1_Fail_Acc_Data->TC_ReceivedCRC = received_CRC;
+    PUS_1_Fail_Acc_Data->TC_CalcCRC 	= calculated_CRC;
+
+    if (received_CRC != calculated_CRC) {
+        return SPP_PACKET_CRC_MISMATCH;
+    } else {
+        return SPP_OK;
+    }
+}
+
+SPP_error SPP_decode_header(uint8_t* input_msg, uint8_t input_msg_size, SPP_header_t* primary_header) {
+
+	if (input_msg == NULL || primary_header == NULL || input_msg_size < 6) {
+	        return 0;
+	}
+
+	primary_header->packet_version_number	= (input_msg[0] & 0xE0) >> 5;
+	primary_header->packet_type 			= (input_msg[0] & 0x10) >> 4;
+	primary_header->secondary_header_flag	= (input_msg[0] & 0x08) >> 3;
+	primary_header->application_process_id	=((input_msg[0] & 0x03) << 8) | (input_msg[1]);
+	primary_header->sequence_flags			= (input_msg[2] & 0xC0) >> 6;
+	primary_header->packet_sequence_count	=((input_msg[2] & 0x3F) << 8) | (input_msg[3]);
+	primary_header->packet_data_length		= (input_msg[4] << 8) 		   | (input_msg[5]);
+
+    return 1;
 }
 
 SPP_error SPP_encode_header(SPP_header_t* primary_header, uint8_t* result_buffer) {

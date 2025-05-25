@@ -69,6 +69,8 @@ typedef struct {
 	uint16_t packet_data_length;    // 16
 } SPP_header_t;
 
+SPP_error SPP_validate_checksum(uint8_t* packet, uint16_t packet_length, void* PUS_1_Fail_Acc_Data_ptr);
+SPP_error SPP_decode_header(uint8_t* input_msg, uint8_t input_msg_size, SPP_header_t* primary_header);
 SPP_error SPP_encode_header(SPP_header_t* primary_header, uint8_t* result_buffer);
 SPP_header_t SPP_make_header(uint8_t packet_version_number, uint8_t packet_type, uint8_t secondary_header_flag, uint16_t application_process_id, uint8_t sequence_flags, uint16_t packet_sequence_count, uint16_t packet_data_length);
 SPP_error SPP_add_CRC_to_msg(uint8_t* packet, uint16_t length, uint8_t* output);

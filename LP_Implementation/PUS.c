@@ -2,6 +2,40 @@
 #include "PUS.h"
 #include <stdint.h>
 
+
+SPP_error PUS_decode_TC_header(uint8_t* raw_header, PUS_TC_header_t* secondary_header, uint8_t available_data_size) {
+
+	// data length must be at least long enough to store a PUS header, if the secondary header flag is set
+	if (raw_header == NULL || secondary_header == NULL || available_data_size < PUS_TC_HEADER_LEN_WO_SPARE) {
+	        return 0;
+	}
+
+    secondary_header->PUS_version_number = (raw_header[0] & 0xF0) >> 4;
+    secondary_header->ACK_flags          = (raw_header[0] & 0x0F);
+    secondary_header->service_type_id    =  raw_header[1];
+    secondary_header->message_subtype_id =  raw_header[2];
+    secondary_header->source_id          = (raw_header[3] << 8) | raw_header[4];
+    secondary_header->spare              = 0; // Based on PUS message type I guess? (Optional)
+
+    return 1;
+}
+
+// Technically this is not needed since, Langmuir Probe Payload will not send TCs.
+SPP_error PUS_encode_TC_header(PUS_TC_header_t* secondary_header, uint8_t* result_buffer) {
+    for(int i = 0; i < PUS_TC_HEADER_LEN_WO_SPARE; i++) {
+        result_buffer[i] ^= result_buffer[i];    // Clear result buffer.
+    }
+
+    result_buffer[0] |=  secondary_header->PUS_version_number << 4;
+    result_buffer[0] |=  secondary_header->ACK_flags;
+    result_buffer[1] |=  secondary_header->service_type_id;
+    result_buffer[2] |=  secondary_header->message_subtype_id;
+    result_buffer[3] |= (secondary_header->source_id & 0xFF00) >> 8;
+    result_buffer[4] |= (secondary_header->source_id & 0x00FF);
+
+    return SPP_OK;
+};
+
 SPP_error PUS_encode_TM_header(PUS_TM_header_t* secondary_header, uint8_t* result_buffer) {
     for(int i = 0; i < SPP_PUS_TM_HEADER_LEN_WO_SPARE; i++) {
         result_buffer[i] ^= result_buffer[i];    // Clear result buffer.

@@ -11,31 +11,20 @@
 #include <rtems/confdefs.h>
 
 #include "PUS_3.h"
+#include "Device_State.h"
 #include "General_Functions.h"
-
-void configure_port(int fd) {
-    struct termios tty;
-
-    if (tcgetattr(fd, &tty) != 0) {
-        perror("tcgetattr");
-        return;
-    }
-
-    cfmakeraw(&tty); 
-
-    if (tcsetattr(fd, TCSANOW, &tty) != 0) {
-        perror("tcsetattr");
-    }
-}
-
 
 int fd_UART_0, fd_UART_1;
 
 struct termios options_UART_0, options_UART_1;
 
-rtems_id PUS_3, handle_UART_OUT_OBC, task_2_id, handle_UART_IN_OBC;
-
+rtems_id PUS_3, handle_UART_OUT_OBC, handle_UART_Rx_Callback, handle_UART_IN_OBC;
 rtems_id queue_id;
+rtems_event_set events;
+
+uint8_t UART_OBC_OPEN = 1; // Flag used to process incoming UART data
+
+DeviceState Current_Global_Device_State = NORMAL_MODE;
 
 extern volatile UART_Rx_OBC_Msg UART_RxBuffer;
 extern volatile uint16_t UART_recv_count;
@@ -44,7 +33,7 @@ extern volatile uint8_t UART_recv_char;
 rtems_task PUS_3_Task(rtems_task_argument argument)
 {
     // rtems_status_code status;
-    uart_print(fd_UART_1, "Started PUS 3 \r\n");
+    uart_print(fd_UART_1, "STARTED PUS 3 TASK\r\n");
 
     uint32_t current_ticks = 0;
     uint8_t periodic_report = 0;
@@ -69,7 +58,7 @@ rtems_task handle_UART_OUT_OBC_Task(rtems_task_argument argument)
 	size_t received_size;
 	rtems_status_code status;
 
-    // uart_print(fd_UART_0, "Receiving task started \n\r");
+    uart_print(fd_UART_1, "STARTED UART SENDING TASK \n\r");
 
 	while (1)
 	{
@@ -84,13 +73,58 @@ rtems_task handle_UART_OUT_OBC_Task(rtems_task_argument argument)
 
 		if (status == RTEMS_SUCCESSFUL )
 		{
-            // uart_print(fd_UART_0, "Message received \n\r");
+            uart_print(fd_UART_1, "Message received \n\r");
 
             Add_SPP_PUS_and_send_TM(&UART_OUT_msg_received);
 		}
 
 		// Delay 1 tick (similar to osDelay(1))
 		rtems_task_wake_after(1);
+	}
+}
+
+rtems_task handle_UART_Rx_Callback_Task(rtems_task_argument argument)
+{
+	UART_OUT_OBC_msg UART_OUT_msg_received;
+	size_t received_size;
+	rtems_status_code status;
+    char UART_recv_char = {0xFF};
+    uint8_t len; 
+
+    uart_print(fd_UART_1, "STARTED UART READING TASK\r\n");
+
+	while (1)
+	{
+        len = read(fd_UART_0, &UART_recv_char, 1);
+
+        if(UART_OBC_OPEN == 0)
+            continue;
+        
+        UART_RxBuffer.RxBuffer[UART_recv_count] = UART_recv_char;
+
+        // Check if this is the end of frame (0x00 terminator) or the buffer is full
+		if (UART_recv_char == 0x00 || UART_recv_count >= MAX_COBS_FRAME_LEN - 1)
+		{
+            uart_print(fd_UART_1, "Received a new COBS message\r\n");
+
+			// Mark the frame size
+			UART_RxBuffer.frame_size = UART_recv_count + 1;
+
+			UART_recv_count = 0;
+			UART_recv_char = 0xff;
+
+			// Signal the task that a complete frame is ready to be processed
+            status = rtems_event_send(handle_UART_IN_OBC, RTEMS_EVENT_1);
+
+            UART_OBC_OPEN = 0;
+			// DO NOT RE-ARM THE ISR, it will be done after the task processes the buffer,
+			// thus ensuring no race condition (the buffer is not modified while being used)
+		}
+		else
+		{
+			// Continue accumulating characters
+			UART_recv_count++;
+		}
 	}
 }
 
@@ -101,41 +135,27 @@ rtems_task handle_UART_IN_OBC_Task(rtems_task_argument argument)
 	rtems_status_code status;
 
     // uart_print(fd_UART_0, "Receiving task started \n\r");
-    uart_print(fd_UART_1, "STARTED UART READING TASK\n");
+    uart_print(fd_UART_1, "STARTED UART PROCESSING TASK\r\n");
     char UART_recv_char = {0xFF};
 
     uint8_t len; 
 
 	while (1)
 	{
-        // uart_print(fd_UART_1, "STARTED UART READING TASK");
+        rtems_event_receive(
+            RTEMS_EVENT_1,        // Wait for event bit 1
+            RTEMS_WAIT | RTEMS_EVENT_ANY,
+            RTEMS_NO_TIMEOUT,
+            &events
+        );
 
-        len = read(fd_UART_0, &UART_recv_char, 1);
-        // uart_print(fd_UART_1, "\nNew carachter: \n");
-        // uart_print_2(fd_UART_1, &UART_recv_char, len);
-        
-        UART_RxBuffer.RxBuffer[UART_recv_count] = UART_recv_char;
+        uart_print(fd_UART_1, "RECEIVED MESSAGE\r\n");
 
-        // Check if this is the end of frame (0x00 terminator) or the buffer is full
-		if (UART_recv_char == 0x00 || UART_recv_count >= MAX_COBS_FRAME_LEN - 1)
-		{
-			// Mark the frame size
-			UART_RxBuffer.frame_size = UART_recv_count + 1;
+        Handle_incoming_TC();
 
-			UART_recv_count = 0;
-			UART_recv_char = 0xff;
+        memset((void*)UART_RxBuffer.RxBuffer, 0, sizeof(UART_RxBuffer.RxBuffer));
 
-			// Signal the task that a complete frame is ready to be processed
-			uart_print(fd_UART_1, "Received a new COBS message\n");
-
-			// DO NOT RE-ARM THE ISR, it will be done after the task processes the buffer,
-			// thus ensuring no race condition (the buffer is not modified while being used)
-		}
-		else
-		{
-			// Continue accumulating characters
-			UART_recv_count++;
-		}
+        UART_OBC_OPEN = 1;
 	}
 }
 
@@ -154,16 +174,12 @@ rtems_task Init(rtems_task_argument argument)
     cfsetispeed(&options_UART_1, B38400);
     tcsetattr(fd_UART_1, TCSANOW, &options_UART_1);
 
-    // iprintf("Started Application \r\n");
-
-    // uart_print(fd_UART_0, "UART 0 WORKING!\r\n");
-    uart_print(fd_UART_1, "UART 1 WORKING!\r\n");
-
+    uart_print(fd_UART_1, "\r\n!!! STARTED PROGRAM !!!\r\n");
 
     rtems_status_code status;
 
     status = rtems_task_create(
-        rtems_build_name('P','R','T','1'),
+        rtems_build_name('P','U','S','3'),
         2,                         /* priority */
         10*RTEMS_MINIMUM_STACK_SIZE,
         RTEMS_DEFAULT_MODES,
@@ -187,8 +203,20 @@ rtems_task Init(rtems_task_argument argument)
     }
 
     status = rtems_task_create(
-        rtems_build_name('U','R','T','2'),
+        rtems_build_name('U','R','T','0'),
         1,                         /* priority */
+        10*RTEMS_MINIMUM_STACK_SIZE,
+        RTEMS_DEFAULT_MODES,
+        RTEMS_DEFAULT_ATTRIBUTES,
+        &handle_UART_Rx_Callback
+    );
+    if (status != RTEMS_SUCCESSFUL) {
+        exit(1);
+    }
+
+    status = rtems_task_create(
+        rtems_build_name('U','R','T','2'),
+        2,                         /* priority */
         10*RTEMS_MINIMUM_STACK_SIZE,
         RTEMS_DEFAULT_MODES,
         RTEMS_DEFAULT_ATTRIBUTES,
@@ -219,11 +247,15 @@ rtems_task Init(rtems_task_argument argument)
         exit(1);
     }
 
-    status = rtems_task_start(handle_UART_IN_OBC, handle_UART_IN_OBC_Task, 0);
+    status = rtems_task_start(handle_UART_Rx_Callback, handle_UART_Rx_Callback_Task, 0);
     if (status != RTEMS_SUCCESSFUL) {
         exit(1);
     }
 
+    status = rtems_task_start(handle_UART_IN_OBC, handle_UART_IN_OBC_Task, 0);
+    if (status != RTEMS_SUCCESSFUL) {
+        exit(1);
+    }
 
     uart_print(fd_UART_1, "END OF INIT TASK!\r\n");
 
