@@ -1,6 +1,7 @@
 #include "General_Functions.h"
 #include "Space_Packet_Protocol.h"
 #include "PUS.h"
+#include "PUS_3.h"
 #include "PUS_1_service.h"
 #include "PUS_17_service.h"
 #include "COBS.h"
@@ -193,9 +194,9 @@ void Handle_incoming_TC() {
 		uint8_t result = NO_ERROR;
 
 		if (PUS_TC_header.service_type_id == HOUSEKEEPING_SERVICE_ID) {
-			// result = PUS_3_handle_HK_TC(&SPP_header, &PUS_TC_header, data, data_size);
-			// if(result != NO_ERROR)
-			// 	PUS_1_send_fail_acc(&SPP_header, &PUS_TC_header, &PUS_1_Fail_Acc_Data, result);
+			result = PUS_3_handle_HK_TC(&SPP_header, &PUS_TC_header, data, data_size);
+			if(result != NO_ERROR)
+				PUS_1_send_fail_acc(&SPP_header, &PUS_TC_header, &PUS_1_Fail_Acc_Data, result);
 		}
 		else if (PUS_TC_header.service_type_id == FUNCTION_MANAGEMNET_ID && data_size > 0) {
 			// result = PUS_8_handle_FM_TC(&SPP_header, &PUS_TC_header, data, data_size);

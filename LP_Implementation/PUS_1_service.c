@@ -9,7 +9,7 @@
 #include "PUS_1_service.h"
 #include <bsp.h>
 
-extern rtems_id queue_id;
+extern rtems_id queue_1_id;
 
 // Flags denoting if an ACK TM message is requested for
 // Success of request acceptence, start , progress and completion of execution
@@ -39,7 +39,7 @@ void PUS_1_send_succ_acc(SPP_header_t* SPP_h, PUS_TC_header_t* PUS_h) {
     	SPP_encode_header(SPP_h, msg_to_send.TM_data);
     	msg_to_send.TM_data_len			= SPP_HEADER_LEN - 2;
 
-        rtems_status_code send_status = rtems_message_queue_send(queue_id, &msg_to_send, sizeof(msg_to_send));
+        rtems_status_code send_status = rtems_message_queue_send(queue_1_id, &msg_to_send, sizeof(msg_to_send));
     }
 }
 void PUS_1_send_fail_acc(SPP_header_t* SPP_h, PUS_TC_header_t* PUS_h, PUS_1_Fail_Acc_Data_t* PUS_1_Fail_Acc_Data, uint16_t err_code)
@@ -73,7 +73,7 @@ void PUS_1_send_fail_acc(SPP_header_t* SPP_h, PUS_TC_header_t* PUS_h, PUS_1_Fail
 
 		msg_to_send.TM_data_len			= SPP_HEADER_LEN - 2 + 12;
 
-        rtems_status_code send_status = rtems_message_queue_send(queue_id, &msg_to_send, sizeof(msg_to_send));
+        rtems_status_code send_status = rtems_message_queue_send(queue_1_id, &msg_to_send, sizeof(msg_to_send));
     }
 }
 
@@ -90,7 +90,7 @@ void PUS_1_send_succ_start(SPP_header_t* SPP_h, PUS_TC_header_t* PUS_h) {
 		SPP_encode_header(SPP_h, msg_to_send.TM_data);
 		msg_to_send.TM_data_len			= SPP_HEADER_LEN - 2;
 
-        rtems_status_code send_status = rtems_message_queue_send(queue_id, &msg_to_send, sizeof(msg_to_send));
+        rtems_status_code send_status = rtems_message_queue_send(queue_1_id, &msg_to_send, sizeof(msg_to_send));
     }
 }
 void PUS_1_send_fail_start(SPP_header_t* SPP_h, PUS_TC_header_t* PUS_h, uint16_t err_code) {
@@ -115,7 +115,7 @@ void PUS_1_send_fail_start(SPP_header_t* SPP_h, PUS_TC_header_t* PUS_h, uint16_t
 
 		msg_to_send.TM_data_len			= SPP_HEADER_LEN - 2 + 4;
 
-        rtems_status_code send_status = rtems_message_queue_send(queue_id, &msg_to_send, sizeof(msg_to_send));
+        rtems_status_code send_status = rtems_message_queue_send(queue_1_id, &msg_to_send, sizeof(msg_to_send));
     }
 }
 
@@ -132,7 +132,7 @@ void PUS_1_send_succ_prog(SPP_header_t* SPP_h, PUS_TC_header_t* PUS_h) {
 		SPP_encode_header(SPP_h, msg_to_send.TM_data);
 		msg_to_send.TM_data_len			= SPP_HEADER_LEN - 2;
 
-        rtems_status_code send_status = rtems_message_queue_send(queue_id, &msg_to_send, sizeof(msg_to_send));
+        rtems_status_code send_status = rtems_message_queue_send(queue_1_id, &msg_to_send, sizeof(msg_to_send));
     }
 }
 void PUS_1_send_fail_prog(SPP_header_t* SPP_h, PUS_TC_header_t* PUS_h, uint16_t err_code) {
@@ -157,7 +157,7 @@ void PUS_1_send_fail_prog(SPP_header_t* SPP_h, PUS_TC_header_t* PUS_h, uint16_t 
 
 		msg_to_send.TM_data_len			= SPP_HEADER_LEN - 2 + 4;
 
-        rtems_status_code send_status = rtems_message_queue_send(queue_id, &msg_to_send, sizeof(msg_to_send));
+        rtems_status_code send_status = rtems_message_queue_send(queue_1_id, &msg_to_send, sizeof(msg_to_send));
     }
 }
 
@@ -174,7 +174,7 @@ void PUS_1_send_succ_comp(SPP_header_t* SPP_h, PUS_TC_header_t* PUS_h) {
 		SPP_encode_header(SPP_h, msg_to_send.TM_data);
 		msg_to_send.TM_data_len			= SPP_HEADER_LEN - 2;
 
-        rtems_status_code send_status = rtems_message_queue_send(queue_id, &msg_to_send, sizeof(msg_to_send));
+        rtems_status_code send_status = rtems_message_queue_send(queue_1_id, &msg_to_send, sizeof(msg_to_send));
     }
 }
 void PUS_1_send_fail_comp(SPP_header_t* SPP_h, PUS_TC_header_t* PUS_h, uint16_t err_code) {
@@ -199,6 +199,6 @@ void PUS_1_send_fail_comp(SPP_header_t* SPP_h, PUS_TC_header_t* PUS_h, uint16_t 
 
 		msg_to_send.TM_data_len			= SPP_HEADER_LEN - 2 + 4;
 
-        rtems_status_code send_status = rtems_message_queue_send(queue_id, &msg_to_send, sizeof(msg_to_send));
+        rtems_status_code send_status = rtems_message_queue_send(queue_1_id, &msg_to_send, sizeof(msg_to_send));
     }
 }

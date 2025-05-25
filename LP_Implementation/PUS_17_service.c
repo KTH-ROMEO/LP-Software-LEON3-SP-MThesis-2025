@@ -11,7 +11,7 @@
 #include "Device_State.h"
 #include <bsp.h>
 
-extern rtems_id queue_id;
+extern rtems_id queue_1_id;
 
 TM_Err_Codes PUS_17_handle_TEST_TC(SPP_header_t* SPP_header, PUS_TC_header_t* PUS_TC_header) {
 
@@ -36,7 +36,7 @@ TM_Err_Codes PUS_17_handle_TEST_TC(SPP_header_t* SPP_header, PUS_TC_header_t* PU
 		msg_to_send.TM_data_len			= 0;
 
 		// xQueueSend(UART_OBC_Out_Queue, &msg_to_send, portMAX_DELAY);
-        rtems_status_code send_status = rtems_message_queue_send(queue_id, &msg_to_send, sizeof(msg_to_send));
+        rtems_status_code send_status = rtems_message_queue_send(queue_1_id, &msg_to_send, sizeof(msg_to_send));
 
 		PUS_1_send_succ_comp(SPP_header, PUS_TC_header);
     }
